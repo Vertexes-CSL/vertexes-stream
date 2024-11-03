@@ -22,10 +22,10 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'ver-obspy-zookeeper:2181'
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://ver-obspy-kafka:9092,OUTSIDE://localhost:19092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: DOCKER://ver-obspy-kafka:9092,INSIDE://ver-obspy-kafka:9092,OUTSIDE://localhost:19092
+      KAFKA_ADVERTISED_LISTENERS: DOCKER://ver-obspy-kafka:9092,INSIDE://ver-obspy-kafka:9092,OUTSIDE://85.209.163.202:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER:PLAINTEXT,INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
 
   init-kafka:
@@ -40,9 +40,9 @@ services:
       # blocks until kafka is reachable
       kafka-topics --bootstrap-server ver-obspy-kafka:9092 --list
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic query --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
-      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
-      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic pick --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic seismic_preprocess --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic seismic_store --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic pick_data --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server ver-obspy-kafka:9092 --list
       "
@@ -67,7 +67,7 @@ services:
       dockerfile: Dockerfile
     container_name: ver-obspy-picker
     environment:
-      - picker.env
+      - .seeder.env
     restart: always
 
   producer:
@@ -81,7 +81,7 @@ services:
       dockerfile: Dockerfile
     container_name: ver-obspy-producer
     environment:
-      - producer.env
+      - .producer.env
     ports:
       - '8000:8000'
     restart: always
@@ -97,7 +97,7 @@ services:
       dockerfile: Dockerfile
     container_name: ver-obspy-queue
     environment:
-      - queue.env
+      - .queue.env
     restart: always
     mem_limit: 60m
 
