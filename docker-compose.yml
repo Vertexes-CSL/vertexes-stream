@@ -72,7 +72,6 @@ services:
   producer:
     image: confluentinc/cp-kafka
     depends_on:
-      - redis
       - kafka
       - init-kafka
     build:
@@ -157,5 +156,5 @@ services:
   #       aliases:
   #         - notebook
 
-volumes:
-  redis_data:
+# volumes:
+#   redis_data:
