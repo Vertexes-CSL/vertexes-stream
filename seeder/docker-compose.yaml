@@ -1,0 +1,23 @@
+version: '3'
+services:
+  ver-obspy-picker-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ver-obspy-picker-1
+    env_file:
+      - .env
+  # eews-picker-2:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ver-obspy-2
+  #   env_file:
+  #     - .env
+  # eews-picker-3:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ver-obspy-3
+  #   env_file:
+  #     - .env

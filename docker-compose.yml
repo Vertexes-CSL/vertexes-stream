@@ -1,0 +1,164 @@
+version: '3'
+
+networks:
+  aurum_net:
+    driver: bridge
+
+services:
+  zookeeper:
+    restart: always
+    image: confluentinc/cp-zookeeper
+    container_name: ver-obspy-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    restart: always
+    container_name: ver-obspy-kafka
+    image: confluentinc/cp-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '19092:19092'
+      - '29092:29092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'ver-obspy-zookeeper:2181'
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://ver-obspy-kafka:9092,OUTSIDE://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+
+  init-kafka:
+    container_name: ver-obspy-init-kafka
+    image: confluentinc/cp-kafka:6.1.1
+    depends_on:
+      - kafka
+      - zookeeper
+    entrypoint: ['/bin/sh', '-c']
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --list
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic query --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --create --if-not-exists --topic pick --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server ver-obspy-kafka:9092 --list
+      "
+
+  redis:
+    image: redis
+    command: redis-server --requirepass ver2024db
+    container_name: ver-obspy-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  picker:
+    image: confluentinc/cp-kafka
+    depends_on:
+      - redis
+      - kafka
+      - init-kafka
+    build:
+      context: ./picker
+      dockerfile: Dockerfile
+    container_name: ver-obspy-picker
+    environment:
+      - picker.env
+    restart: always
+
+  producer:
+    image: confluentinc/cp-kafka
+    depends_on:
+      - redis
+      - kafka
+      - init-kafka
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: ver-obspy-producer
+    environment:
+      - producer.env
+    ports:
+      - '8000:8000'
+    restart: always
+
+  queue:
+    image: confluentinc/cp-kafka
+    depends_on:
+      - producer
+      - kafka
+      - init-kafka
+    build:
+      context: ./queue
+      dockerfile: Dockerfile
+    container_name: ver-obspy-queue
+    environment:
+      - queue.env
+    restart: always
+    mem_limit: 60m
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.1
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      aurum_net:
+        aliases:
+          - elasticsearch
+
+  profiler:
+    depends_on:
+      - elasticsearch
+    image: aurum/ddprofiler:0.1
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-ddprofiler
+    volumes:
+      - ./data:/data
+    command: " --store.server elasticsearch --sources /data/mitdwhdata.yml"
+    networks:
+      aurum_net:
+        aliases:
+          - profiler
+
+  nbc:
+    depends_on:
+      - elasticsearch
+    image: aurum/networkbuildercoordinator:0.1
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-networkbuildercoordinator
+    volumes:
+      - ./data/models:/output
+    networks:
+      aurum_net:
+        aliases:
+          - nbc
+
+  notebook:
+    depends_on:
+      - elasticsearch
+    image: aurum/notebook
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-jupyter-notebook
+    volumes:
+      - ./data/models:/data/models
+    ports:
+      - 8888:8888
+    networks:
+      aurum_net:
+        aliases:
+          - notebook
+
+volumes:
+  redis_data:
