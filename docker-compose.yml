@@ -47,18 +47,19 @@ services:
       kafka-topics --bootstrap-server ver-obspy-kafka:9092 --list
       "
 
-  # redis:
-  #   image: redis
-  #   command: redis-server --requirepass ver2024db
-  #   container_name: ver-obspy-redis
-  #   ports:
-  #     - '6379:6379'
-  #   volumes:
-  #     - redis_data:/data
+  redis:
+    image: redis
+    command: redis-server --requirepass ver2024db
+    container_name: ver-obspy-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
 
   seeder:
     image: confluentinc/cp-kafka
     depends_on:
+      - redis
       - kafka
       - init-kafka
     build:
@@ -66,12 +67,13 @@ services:
       dockerfile: Dockerfile
     container_name: ver-obspy-picker
     environment:
-      - seeder.env
+      - picker.env
     restart: always
 
   producer:
     image: confluentinc/cp-kafka
     depends_on:
+      - redis
       - kafka
       - init-kafka
     build:
@@ -156,5 +158,5 @@ services:
   #       aliases:
   #         - notebook
 
-# volumes:
-#   redis_data:
+volumes:
+  redis_data:
