@@ -59,7 +59,6 @@ services:
   seeder:
     image: confluentinc/cp-kafka
     depends_on:
-      - redis
       - kafka
       - init-kafka
     build:
