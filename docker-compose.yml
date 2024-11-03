@@ -47,14 +47,14 @@ services:
       kafka-topics --bootstrap-server ver-obspy-kafka:9092 --list
       "
 
-  redis:
-    image: redis
-    command: redis-server --requirepass ver2024db
-    container_name: ver-obspy-redis
-    ports:
-      - '6379:6379'
-    volumes:
-      - redis_data:/data
+  # redis:
+  #   image: redis
+  #   command: redis-server --requirepass ver2024db
+  #   container_name: ver-obspy-redis
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - redis_data:/data
 
   seeder:
     image: confluentinc/cp-kafka
