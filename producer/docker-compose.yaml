@@ -4,6 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ver-obspy-producer
+    container_name: eews-producer
     env_file:
       - .env

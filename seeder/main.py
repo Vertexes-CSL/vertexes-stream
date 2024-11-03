@@ -1,56 +1,126 @@
+import redis
+import json
 import os
-from app.container import KafkaContainer
-from dotenv import load_dotenv
-import time
+import math
+import copy
+import random
 
-load_dotenv()
+TRESHOLD_DISTANCE = int(os.environ.get("TRESHOLD_DISTANCE", "1000"))
+REPLICA = int(os.environ.get("REPLICA", "40"))
 
-BOOTSTRAP_SERVERS = os.getenv("BOOTSTRAP_SERVERS")
-TOPIC_CONSUMER = os.getenv("TOPIC_CONSUMER")
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
-MONGO_DB = os.getenv("MONGO_DB", "eews")
-MONGO_USER = os.getenv("MONGO_USER", "root")
-MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "example")
-MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
-MONGO_PORT = os.getenv("MONGO_PORT", "27017")
-MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "parameters")
-PROMETHEUS_ADDR = os.getenv("PROMETHEUS_ADDR", "0.0.0.0")
-PROMETHEUS_PORT = os.getenv("PROMETHEUS_PORT", "8012")
+
+def haversine(lat1, lon1, lat2, lon2):
+    # Radius of the Earth in kilometers
+    R = 6371.0
+
+    # Convert latitude and longitude from degrees to radians
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    # Difference in coordinates
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    # Haversine formula
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c
+
+    return distance
+
+
+def save_to_redis():
+    host = os.environ.get("REDIS_HOST", "localhost")
+    redis_port = os.environ.get("REDIS_PORT", "6379")
+    redis_password = os.environ.get("REDIS_PASSWORD", None)
+    env = os.environ.get("ENV", "PROD")
+    print(f"ENVIRONMENT: {env}")
+    print(f"REDIS_HOST: {host}")
+
+    # Dapatkan absolute path ke data.json
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    data_json_path = os.path.join(current_dir, "data.json")
+    r = redis.Redis(
+        host=host,
+        port=int(redis_port),
+        password=redis_password,
+        db=0,
+        decode_responses=True,
+    )
+    print(f"DATA JSON: {data_json_path}")
+    with open(data_json_path, "r") as json_file:
+        data = json_file.read()
+
+    parsed: list = json.loads(data)
+    station_codes = [stat["code"] for stat in parsed]
+    r.set("ENABLED_STATION_CODES", ",".join(station_codes))
+
+    replica_stats = []
+
+    if env == "TEST":
+        for stat in parsed:
+            code = stat["code"]
+            lat = float(stat["lat"])
+            long = float(stat["long"])
+            for j in range(REPLICA):
+                repl_stat = copy.deepcopy(stat)
+                repl_stat["code"] = f"{code}-{j}"
+                repl_stat["lat"] = str(round(random.uniform(lat - 20, lat + 20), 4))
+                repl_stat["long"] = str(round(random.uniform(long - 20, long + 20), 4))
+                replica_stats.append(repl_stat)
+        parsed.extend(replica_stats)
+    r.set("STATIONS", json.dumps(parsed))
+
+    nearest_station_codes: dict[str, list[str]] = {}
+
+    for stat1 in parsed:
+        stat1_code = stat1["code"]
+        lat1, lon1 = stat1["lat"], stat1["long"]
+        nearest_station_codes[stat1_code] = []
+        r.set(f"LOCATION_{stat1_code}", f"{lat1};{lon1}")
+        loc = r.get(f"LOCATION_{stat1_code}").split(";")
+        loc = [float(l) for l in loc]
+        print(f"LOCATION {stat1_code}: {loc}")
+
+        # Iterate through other stations and find the nearest 3
+        nearest_stations = []
+        for stat2 in parsed:
+            stat2_code = stat2["code"]
+            if stat1_code == stat2_code:
+                continue
+
+            lat2, lon2 = stat2["lat"], stat2["long"]
+            distance = haversine(float(lat1), float(lon1), float(lat2), float(lon2))
+            if distance > TRESHOLD_DISTANCE:
+                continue
+
+            if len(nearest_stations) < 10:
+                # Append if there are less than 3 nearest stations
+                nearest_stations.append((stat2_code, distance))
+            else:
+                # Replace farthest station if new distance is closer
+                farthest_station = max(nearest_stations, key=lambda x: x[1])
+                if distance < farthest_station[1]:
+                    nearest_stations.remove(farthest_station)
+                    nearest_stations.append((stat2_code, distance))
+
+        # Sort nearest stations by distance
+        nearest_station_codes[stat1_code] = [
+            code for code, _ in sorted(nearest_stations)
+        ]
+
+    for key, value in nearest_station_codes.items():
+        r.set(f"NEAREST_STATION_{key}", ",".join(value))
+        print(f'Station: {key} : {",".join(value)}')
+
+    print("Data saved to redis")
+
 
 if __name__ == "__main__":
-    container = KafkaContainer()
-    container.config.from_dict(
-        {
-            "bootstrap_servers": BOOTSTRAP_SERVERS,
-            "kafka_config": {
-                "bootstrap.servers": BOOTSTRAP_SERVERS,
-                "group.id": "picker",
-                "auto.offset.reset": "latest",
-            },
-            "redis": {
-                "host": REDIS_HOST,
-                "port": int(REDIS_PORT),
-                "password": REDIS_PASSWORD,
-            },
-            "mongo": {
-                "db_name": MONGO_DB,
-                "host": MONGO_HOST,
-                "port": int(MONGO_PORT),
-                "collection": MONGO_COLLECTION,
-                "user": MONGO_USER,
-                "password": MONGO_PASSWORD,
-            },
-            "prometheus": {
-                "addr": PROMETHEUS_ADDR,
-                "port": int(PROMETHEUS_PORT),
-            },
-        },
-        True,
-    )
-    promethues = container.prometheus()
-    promethues.start()
-    data_processor = container.data_processor()
-    print("=" * 20 + f"Consuming Data From {TOPIC_CONSUMER} Topic" + "=" * 20)
-    data_processor.consume(TOPIC_CONSUMER)
+    save_to_redis()

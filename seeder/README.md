@@ -1,20 +1,19 @@
-# Dokumentasi Deployment untuk Layanan Picker
+# Dokumentasi Deployment untuk Layanan Seeder
 
-Layanan Picker ini bertujuan untuk melakukan prediksi dengan berintegrasi dengan Machine Learning melalui REST API. Layanan ini juga dapat dideploy lebih dari satu instance untuk memastikan tidak ada layanan yang menganggur, dengan jumlah layanan yang kurang atau sama dengan jumlah partisi pada topik Kafka yang akan dikonsumsi datanya.
+Layanan Seeder bertujuan untuk mengisi data stasiun gempa pada Redis. Layanan ini hanya akan dijalankan sekali saja untuk melakukan populasi awal data. Layanan ini membutuhkan alamat host dan port Redis untuk berfungsi.
 
 ## Persyaratan
 
 - Docker
-- docker-compose
 - Git
 
 ## Langkah 1: Clone Repositori
 
-Clone repositori layanan Picker ke mesin lokal Anda menggunakan perintah berikut:
+Clone repositori layanan Seeder ke mesin lokal Anda menggunakan perintah berikut:
 
 ```bash
-git clone https://github.com/distributed-eews/picker.git
-cd picker
+git clone https://github.com/distributed-eews/seeder.git
+cd seeder
 ```
 
 ## Langkah 2: Atur Variabel Lingkungan
@@ -22,57 +21,30 @@ cd picker
 Ubah nama file `.env.example` menjadi `.env` dan atur variabel lingkungan berikut sesuai konfigurasi Anda:
 
 ```plaintext
-BOOTSTRAP_SERVERS=<Alamat Kafka>
-TOPIC_CONSUMER=<Nama topik Kafka yang akan dikonsumsi>
-TOPIC_PRODUCER=<Nama topik Kafka yang akan dikirimkan data>
-ML_URL=<Base URL REST API Machine Learning>
-REDIS_HOST=<Host Redis>
+REDIS_HOST=<Alamat Redis>
 REDIS_PORT=<Port Redis>
 ```
 
-## Langkah 3: Konfigurasi Docker Compose
+## Langkah 3: Mulai Kontainer Docker
 
-Tambahkan konfigurasi untuk setiap layanan picker pada file `docker-compose.yaml`. Pastikan untuk menambahkan layanan sejumlah partisi pada topik Kafka yang akan dikonsumsi datanya:
-
-```yaml
-version: '3'
-services:
-  eews-picker-1:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: eews-picker-1
-    env_file:
-      - .env
-  eews-picker-2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: eews-picker-2
-    env_file:
-      - .env
-  # Tambahkan layanan picker lainnya sesuai kebutuhan
-```
-
-## Langkah 4: Mulai Kontainer Docker
-
-Gunakan docker-compose untuk memulai layanan picker:
+Gunakan docker-compose untuk memulai layanan Seeder:
 
 ```bash
+cd seeder
 docker-compose up -d
 ```
 
-## Langkah 5: Verifikasi Deployment
+## Langkah 4: Verifikasi Deployment
 
-Pastikan kontainer picker berjalan tanpa masalah:
+Pastikan kontainer Seeder berjalan tanpa masalah:
 
 ```bash
 docker-compose ps
 ```
 
-## Langkah 6: Pemantauan dan Penyesuaian
+## Langkah 5: Pemantauan dan Penyesuaian
 
-- Periksa ketersediaan layanan picker untuk memastikan tidak ada layanan yang menganggur.
-- Sesuaikan jumlah layanan picker sesuai kebutuhan dengan jumlah partisi pada topik Kafka yang akan dikonsumsi datanya.
+- Pastikan layanan Seeder hanya dijalankan sekali untuk melakukan populasi awal data.
+- Periksa ketersediaan data pada Redis untuk memastikan populasi telah berhasil.
 
-Dengan langkah-langkah ini, Layanan Picker Anda seharusnya berhasil didaftarkan dan berjalan di lingkungan Anda. Pastikan untuk memantau kinerja dan melakukan penyesuaian sesuai kebutuhan.
+Dengan langkah-langkah ini, Layanan Seeder Anda seharusnya berhasil melakukan populasi data stasiun gempa pada Redis. Pastikan untuk memantau kinerja dan melakukan penyesuaian sesuai kebutuhan.
