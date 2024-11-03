@@ -160,3 +160,4 @@ services:
 
 volumes:
   redis_data:
+  elasticsearch_data:
