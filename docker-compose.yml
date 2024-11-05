@@ -1,6 +1,6 @@
 networks:
-  aurum_net:
-    driver: bridge
+  nginx-manager_customnetwork:
+    external: true
 
 services:
   zookeeper:
@@ -29,6 +29,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
       KAFKA_MAX_MESSAGE_BYTES: 700000000
       KAFKA_MESSAGE_MAX_BYTES: 700000000
+    networks:
+      - nginx-manager_customnetwork
 
   init-kafka:
     container_name: ver-obspy-init-kafka
