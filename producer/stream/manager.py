@@ -45,6 +45,7 @@ class StreamManager:
                 self.producer.current_mode = StreamMode.IDLE
 
         elif mode == StreamMode.LIVE and self.producer.current_mode == StreamMode.IDLE:
+            print('GASGAS')
             self.producer.current_mode = StreamMode.LIVE
             self.seedlink.startStreaming()
 

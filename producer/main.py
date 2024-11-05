@@ -45,21 +45,22 @@ app.add_middleware(
 
 
 @app.get("/live")
-def live(background_task: BackgroundTasks):
-    background_task.add_task(streamManager.start, StreamMode.LIVE)
-    return "ok"
+async def live(background_tasks: BackgroundTasks):
+    print("Received request to start live streaming")
+    background_tasks.add_task(lambda: streamManager.start(StreamMode.LIVE))
+    return {"message": "Task triggered in the background"}
 
+# @app.post("/idle")
+# def idle(background_tasks: BackgroundTasks):
+#     print("Received request to stop live streaming")
+#     background_tasks.add_task(streamManager.start, StreamMode.IDLE)
+#     return "ok"
 
-@app.post("/idle")
-def live(background_task: BackgroundTasks):
-    background_task.add_task(streamManager.start, StreamMode.IDLE)
-    return "ok"
-
-
-@app.get("/file")
-def live(background_task: BackgroundTasks, filename: str = SOURCE_MSEED):
-    background_task.add_task(streamManager.start, StreamMode.FILE, filename)
-    return "ok"
+# @app.get("/file")
+# def file(background_tasks: BackgroundTasks, filename: str = SOURCE_MSEED):
+#     print(f"Received request to stream from file: {filename}")
+#     background_tasks.add_task(streamManager.start, StreamMode.FILE, filename)
+#     return "ok"
 
 
 if __name__ == "__main__":
@@ -68,3 +69,4 @@ if __name__ == "__main__":
     )
     server = uvicorn.Server(config)
     server.run()
+    print('GASSS')

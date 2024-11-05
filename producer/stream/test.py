@@ -1,15 +1,19 @@
-import socket
+from kafka import KafkaProducer
+from os import getenv
+from dotenv import load_dotenv
 
-def check_kafka_broker(host, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(5)  # Timeout for the connection attempt (in seconds)
-        try:
-            s.connect((host, port))
-            print("Connection successful. The broker is reachable.")
-        except socket.timeout:
-            print("Connection timed out. The broker may be unreachable or down.")
-        except socket.error as e:
-            print(f"Connection failed: {e}")
+# Load environment variables
+load_dotenv()
 
-# Test the Kafka broker connection
-check_kafka_broker("85.209.163.202", 19092)
+# Kafka connection parameters
+bootstrap_servers = getenv("BOOTSTRAP_SERVERS")
+topic_name = getenv("TOPIC_NAME")
+
+try:
+    producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
+    # Send a test message
+    producer.send(topic_name, b'Test message')
+    producer.flush()
+    print("Message sent successfully to Kafka topic.")
+except Exception as e:
+    print(f"Failed to send message to Kafka: {e}")

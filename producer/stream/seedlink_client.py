@@ -19,6 +19,10 @@ class SeedlinkClient(StreamClient, EasySeedLinkClient):
         for station in self.stations:
             self.select_stream(net="GE", station=station, selector="BH?")
         print("Starting connection to seedlink server ", self.server_hostname)
+        if not self.conn:
+            print("Failed to connect to SeedLink server.")
+        else:
+            print("Connected to SeedLink server:", self.server_hostname)
 
     def run(self):
         if not len(self.conn.streams):
