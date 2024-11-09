@@ -128,9 +128,9 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
       MONGO_DB_NAME: ${MONGO_DB_NAME}
     volumes:
-      - vertexes-stream_mongodb_data:/data/db
+      - mongodb_data:/data
     networks:
-      - vertexes-stream_default
+      - nginx-manager_customnetwork
     ports:
       - "27017:27017"
 
