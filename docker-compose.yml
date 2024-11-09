@@ -120,6 +120,7 @@ services:
 
   mongodb:
     image: mongo:latest
+    container_name: ver-obspy-mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: ver2024db
