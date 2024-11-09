@@ -120,7 +120,7 @@ services:
     networks:
       - nginx-manager_customnetwork
 
-  ver-obspy-mongo:
+  mongo:
     image: mongo:latest
     container_name: ver-obspy-mongo
     environment:
@@ -132,7 +132,7 @@ services:
     networks:
       - nginx-manager_customnetwork
     ports:
-      - "27017:27017"
+      - "27018:27018"
 
   # profiler:
   #   depends_on:
