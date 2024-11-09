@@ -1,54 +1,33 @@
-# Dokumentasi Deployment untuk EEWS (Earthquake Early Warning System)
-
-Dokumen ini memberikan panduan untuk melakukan deployment EEWS menggunakan Docker Compose. EEWS adalah sistem peringatan dini gempa bumi yang terdiri dari berbagai layanan seperti Kafka, Redis, MongoDB, Machine Learning, dan lainnya.
+# How to use this experiment preprocessor engine?
 
 ## Persyaratan
 
-- Docker
-- Docker Compose
-- Git
+- Redeploy `vertexes-stream` stacks in Portrainer
+- Don't forget to attach your env
 
-## Langkah-langkah Deployment
+## Step by step
 
-1. **Clone Repositori**
-   Clone repositori EEWS ke mesin lokal Anda dengan menjalankan perintah berikut:
-
-   ```bash
-   git clone https://github.com/distributed-eews/eews.git
-   cd eews
-   ```
-
-2. **Konfigurasi Environtment**
-   Set env variable pada file .producer.env, .queue.env, .seeder.env, .ws-rest.env
-
-   Buka file `./frontend/Dockerfile` menggunakan editor teks favorit Anda. Perhatikan bagian konfigurasi di bawah ini:
-
-   ```Dockerfile
-   ENV NEXT_PUBLIC_BACKEND_URL="http://localhost:8080"
-   ENV NEXT_PUBLIC_WS_URL="ws://localhost:8080"
-   ```
-
-   Ubah `localhost` dengan IP atau hostname dari komputer tempat frontend akan dijalankan.
-
-3. **Konfigurasi Docker Compose**
-   Sesuaikan konfigurasi Docker Compose pada file `docker-compose.yaml` untuk menyesuaikan jumlah layanan Kafka, Picker, Queue, dan Machine Learning yang akan dijalankan. Pastikan untuk menambah atau mengurangi layanan sesuai kebutuhan.
-
-4. **Mulai Kontainer Docker**
-   Jalankan perintah berikut untuk memulai kontainer Docker:
+1. **Clone Repository**
+   Clone the Vertexes Stream to your local machine Anda with this command:
 
    ```bash
-   docker-compose up -d
+   git clone https://github.com/Vertexes-CSL/vertexes-stream.git
    ```
 
-5. **Verifikasi Deployment**
-   Pastikan semua kontainer berjalan dengan baik dengan menjalankan perintah:
+2. **Fill the .env inside**: Benchmark to the `.env.example` file
 
+3. **Install the requirements, Start the engine**
    ```bash
-   docker-compose ps
+   cd [folder]
+   python3 -m venv env
+   source env/bin/activate
+   pip install -r requirements.txt
+   python3 main.py
    ```
 
-6. **Pemantauan dan Penyesuaian**
-   - Pantau kinerja dan keandalan setiap layanan dengan menggunakan alat pemantauan yang sesuai.
-   - Sesuaikan jumlah layanan Kafka, Picker, Queue, dan Machine Learning sesuai dengan kebutuhan dan beban kerja.
+4. **Kafka Verification**: Open your Offset Explorer, use ths details
+   - On General section, fill `Bootstrap Server` section with `85.209.163.202:9092,85.209.163.202:19092`
+   - On Zookeeper section, fill `Host` and `Port` section with `85.209.163.202` and `2181`
+   - Then, connect
 
-Dengan langkah-langkah di atas, EEWS Anda seharusnya telah berhasil di-deploy dan siap untuk digunakan. Pastikan untuk memantau dan melakukan penyesuaian sesuai kebutuhan.
+5. **MongoDB Verification**: Access MongoDB Atlas, create your account and use the uri to be hitted in the `store` service env

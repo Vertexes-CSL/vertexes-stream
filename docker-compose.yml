@@ -49,6 +49,8 @@ services:
       echo -e 'Creating kafka topics'
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic seismic_preprocess --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic seismic_store --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic weather_preprocess --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic weather_store --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic pick_data --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --list
@@ -79,18 +81,18 @@ services:
       - .seeder.env
     restart: always
 
-  producer:
+  seismic_source:
     image: confluentinc/cp-kafka
     depends_on:
       - redis
       - kafka
       - init-kafka
     build:
-      context: ./producer
+      context: ./seismic_source
       dockerfile: Dockerfile
-    container_name: ver-obspy-producer
+    container_name: ver-obspy-seismic-source
     environment:
-      - .producer.env
+      - .seismic_source.env
     ports:
       - '8000:8000'
     restart: always

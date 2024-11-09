@@ -1,0 +1,9 @@
+version: '3'
+services:
+  seismic-producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ver-obspy-producer
+    env_file:
+      - .env
