@@ -3,7 +3,7 @@ from .producer import KafkaProducer
 from .processor import KafkaDataProcessor
 from .pooler import Pooler
 from .myredis import MyRedis
-from .mongo import MongoDBClient
+from ...queue.app.mongo import MongoDBClient
 from dependency_injector import containers, providers
 from .prometheus import Prometheus
 

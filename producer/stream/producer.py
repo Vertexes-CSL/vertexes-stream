@@ -23,9 +23,6 @@ if not TOPIC_NAME:
 
 DEFAULT_PRODUCER_CONFIG = {
     "bootstrap.servers": BOOTSTRAP_SERVERS,
-    # 'compression.type': 'lz4',
-    # 'linger.ms': 100,
-    # 'batch.size': 131072, # 128 KB
 }
 
 
@@ -55,7 +52,7 @@ class KafkaProducer:
 
         self.value_serializer = value_serializer
         if self.value_serializer is None:
-            self.value_serializer = pickle.dumps
+            self.value_serializer = lambda x: json.dumps(x).encode('utf-8') 
 
         logging.debug("Finish creating producer")
 
@@ -64,9 +61,8 @@ class KafkaProducer:
         self.stations = set(stats.split(","))
         for i in range(0, self.partitions):
             self.producer.produce(
-                # topic=self.topic_name,
                 self.topic_name,
-                value=self.value_serializer(json.dumps({"type": "start"})),
+                value=json.loads(self.value_serializer(json.dumps({"type": "start"}))),
                 partition=i,
                 key="start",
             )
@@ -78,7 +74,7 @@ class KafkaProducer:
             self.producer.produce(
                 # topic=self.topic_name,
                 self.topic_name,
-                value=self.value_serializer(json.dumps({"type": "stop"})),
+                value=json.loads(self.value_serializer(json.dumps({"type": "stop"}))),
                 partition=i,
                 key="stop",
             )
@@ -93,15 +89,14 @@ class KafkaProducer:
         callback_function: Optional[Callable[[str, str], None]] = None,
     ):
         if mode == self.current_mode and key in self.stations:
+            serialized_value = self.value_serializer(value) 
+            print(f"Serialized value: {serialized_value}") 
             self.producer.produce(
-                # topic=self.topic_name,
                 self.topic_name,
-                value=self.value_serializer(value),
+                value=json.loads(serialized_value),
                 key=key,
             )
-            # if key == "BKB" and value["channel"] == "BHE":
-            #     print(value["starttime"], "-", value["endtime"])
-        self.producer.flush()
+            self.producer.flush()
 
     def log_on_kafka_message_delivery(self, error: Optional[str], message: str):
         if error is not None:

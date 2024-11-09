@@ -16,7 +16,6 @@ class StreamManager:
         self.seedlink_server = seedlink_server
         self.fdsnws = FdsnwsClient(self.producer, base_url=self.fdsnws_server)
         self.seedlink = SeedlinkClient(self.producer, server_url=self.seedlink_server)
-        # self.fileclient = FileClient(self.producer)
 
     def start(self, mode: StreamMode, *args, **kwargs):
         if self.fdsnws.blocked:
@@ -45,7 +44,6 @@ class StreamManager:
                 self.producer.current_mode = StreamMode.IDLE
 
         elif mode == StreamMode.LIVE and self.producer.current_mode == StreamMode.IDLE:
-            print('GASGAS')
             self.producer.current_mode = StreamMode.LIVE
             self.seedlink.startStreaming()
 

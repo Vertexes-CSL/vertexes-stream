@@ -9,7 +9,7 @@ import requests
 from dotenv import load_dotenv
 from .pooler import Pooler
 from .myredis import MyRedis
-from .mongo import MongoDBClient
+from ...queue.app.mongo import MongoDBClient
 import numpy as np
 from scipy.optimize import minimize
 import math
@@ -17,7 +17,7 @@ from .prometheus import Prometheus
 
 load_dotenv()
 
-ML_URL = os.getenv("ML_URL", "http://localhost:3000")
+ML_URL = os.getenv("ML_URL", "http://localhost:8080")
 # PRED_URL = os.getenv("PRED_URL", "http://localhost:3000/predict")
 PRED_URL = f"{ML_URL}/predict"
 # INIT_URL = os.getenv("INIT_URL", "http://localhost:3000/restart")

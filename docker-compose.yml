@@ -118,6 +118,18 @@ services:
     networks:
       - nginx-manager_customnetwork
 
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ver2024db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - nginx-manager_customnetwork
+
   # profiler:
   #   depends_on:
   #     - elasticsearch
@@ -166,3 +178,4 @@ services:
 volumes:
   redis_data:
   elasticsearch_data:
+  mongodb_data:

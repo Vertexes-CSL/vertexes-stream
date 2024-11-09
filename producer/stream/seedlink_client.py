@@ -19,10 +19,6 @@ class SeedlinkClient(StreamClient, EasySeedLinkClient):
         for station in self.stations:
             self.select_stream(net="GE", station=station, selector="BH?")
         print("Starting connection to seedlink server ", self.server_hostname)
-        if not self.conn:
-            print("Failed to connect to SeedLink server.")
-        else:
-            print("Connected to SeedLink server:", self.server_hostname)
 
     def run(self):
         if not len(self.conn.streams):
@@ -30,7 +26,6 @@ class SeedlinkClient(StreamClient, EasySeedLinkClient):
                 "No streams specified. Use select_stream() to select a stream"
             )
         self.__streaming_started = True
-        # Start the collection loop
         print("Starting collection on:", datetime.utcnow())
         while True:
             arrive_time = datetime.utcnow()
@@ -60,6 +55,11 @@ class SeedlinkClient(StreamClient, EasySeedLinkClient):
         print("-" * 20, "Stopping miniseed", "-" * 20)
 
     def on_data(self, trace: Trace, arrive_time):
-        arrive_time = datetime.utcnow()
-        msg = self._extract_values(trace, arrive_time)
-        self.producer.produce_message(json.dumps(msg), msg["station"], StreamMode.LIVE)
+        try:
+            arrive_time = datetime.utcnow()
+            msg = self._extract_values(trace, arrive_time)
+            self.producer.produce_message(
+                json.dumps(msg), msg["station"], StreamMode.LIVE
+            )
+        except Exception as e:
+            print(f"Error processing data for station {msg['station']}: {e}")

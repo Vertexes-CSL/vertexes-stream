@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 import redis
 import json
 
@@ -20,7 +20,13 @@ class MyRedis:
     def save_waveform(self, station: str, waveform: dict):
         self.c.set(f"WAVEFORM_{station}", json.dumps(waveform), 60 * 10)
 
-    def get_waveform(self, station: str) -> dict | None:
+    # def get_waveform(self, station: str) -> dict | None:
+    #     r = self.c.get(f"WAVEFORM_{station}")
+    #     if r is None:
+    #         return None
+    #     return json.loads(r)
+    
+    def get_waveform(self, station: str) -> Union[dict, None]:
         r = self.c.get(f"WAVEFORM_{station}")
         if r is None:
             return None

@@ -38,19 +38,6 @@ class FdsnwsClient(StreamClient, Client):
         self.blocked = False
         self.producer.stopTrace()
 
-    # def _produce_time_window(self, start_time, end_time):
-    #     start_time = UTCDateTime(start_time)
-    #     end_time = UTCDateTime(end_time)
-    #     if (start_time >= end_time):
-    #         raise ValueError("Start time is greater than end time")
-    #     result = []
-    #     pointer = start_time
-    #     while (pointer < end_time):
-    #         result.append(pointer)
-    #         pointer += 30
-    #     result.append(end_time)
-    #     return result
-
     def _bulk(self, start_time, end_time):
         bulk = [("GE", station, "*", "BH?", start_time, end_time)
                 for station in self.stations]

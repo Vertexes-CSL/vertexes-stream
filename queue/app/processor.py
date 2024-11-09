@@ -1,19 +1,23 @@
 import json
-import pickle
+import copy
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-import copy
 from confluent_kafka import Consumer, Producer
 from .missing_data_handler import MissingDataHandler
-
+from .mongo import MongoDBClient  # Assuming MongoDBClient is a class that handles MongoDB operations
 
 class KafkaDataProcessor:
     def __init__(
-        self, consumer: Consumer, producer: Producer, data_handler: MissingDataHandler
+        self, 
+        consumer: Consumer, 
+        producer: Producer, 
+        data_handler: MissingDataHandler,
+        mongo_client: MongoDBClient  # Inject MongoDB client for saving data
     ):
         self.consumer = consumer
         self.data_handler = data_handler
         self.producer = producer
+        self.mongo_client = mongo_client  # MongoDB client for saving data
         self.partitions = []
 
     def consume(self, topic: str):
@@ -34,7 +38,7 @@ class KafkaDataProcessor:
                 continue
 
             show_nf = True
-            value = pickle.loads(msg.value())
+            value = msg.value()
             value = json.loads(value)
             logvalue = copy.copy(value)
             logvalue["data"] = None
@@ -52,25 +56,11 @@ class KafkaDataProcessor:
     def __process_received_data(self, value: Dict[str, Any], arrive_time: datetime):
         station = value["station"]
         channel = value["channel"]
-        eews_producer_time = value["eews_producer_time"]
+        producer_time = value["producer_time"]
         data = value["data"]
-        start_time = datetime.fromisoformat(value["starttime"])
-        end_time = datetime.fromisoformat(value["endtime"])
+        start_time = datetime.strptime(value["starttime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        end_time = datetime.strptime(value["endtime"], "%Y-%m-%dT%H:%M:%S.%fZ")
         sampling_rate = value["sampling_rate"]
-        # if station == "BKB" and channel == "BHE":
-        #     print("Received ", station, channel)
-        #     print("from message: ", value['starttime'])
-
-        # TODO: Comment this
-        # self.producer.produce(
-        #     station,
-        #     channel,
-        #     data,
-        #     start_time,
-        #     end_time,
-        #     eews_producer_time=eews_producer_time,
-        #     arrive_time=arrive_time,
-        # )
 
         self.data_handler.handle_missing_data(
             station, channel, start_time, sampling_rate
@@ -81,7 +71,7 @@ class KafkaDataProcessor:
             data,
             start_time,
             sampling_rate,
-            eews_producer_time=eews_producer_time,
+            producer_time=producer_time,
             arrive_time=arrive_time,
         )
 
@@ -92,14 +82,9 @@ class KafkaDataProcessor:
         data: List[int],
         start_time: datetime,
         sampling_rate: float,
-        eews_producer_time,
+        producer_time,
         arrive_time: datetime,
     ):
-        # if station not in self.data_handler.data_pool:
-        #     self.data_handler.data_pool[station] = {}
-        # if channel not in self.data_handler.data_pool[station]:
-        #     self.data_handler.data_pool[station][channel] = []
-
         current_time = start_time
         if (
             station in self.data_handler.last_processed_time
@@ -121,10 +106,13 @@ class KafkaDataProcessor:
                 data_to_send,
                 current_time,
                 current_time + time_to_add,
-                eews_producer_time=eews_producer_time,
+                producer_time=producer_time,
                 arrive_time=arrive_time,
             )
             current_time = current_time + time_to_add
+
+            # Save the data to MongoDB after processing
+            self.__save_data_to_mongo(station, channel, data_to_send, current_time, time_to_add, producer_time, arrive_time)
 
     def __send_data_to_queue(
         self,
@@ -133,7 +121,7 @@ class KafkaDataProcessor:
         data: List[int],
         start_time: datetime,
         end_time: datetime,
-        eews_producer_time,
+        producer_time,
         arrive_time: datetime,
     ):
         self.data_handler.update_last_processed_time(station, channel, end_time)
@@ -143,12 +131,37 @@ class KafkaDataProcessor:
             data,
             start_time,
             end_time,
-            eews_producer_time=eews_producer_time,
+            producer_time=producer_time,
             arrive_time=arrive_time,
         )
 
+    def __save_data_to_mongo(
+        self,
+        station: str,
+        channel: str,
+        data: List[int],
+        start_time: datetime,
+        time_to_add: timedelta,
+        producer_time,
+        arrive_time: datetime
+    ):
+        # Create a payload to save to MongoDB
+        payload = {
+            "station": station,
+            "channel": channel,
+            "data": data,
+            "start_time": start_time,
+            "end_time": start_time + time_to_add,
+            "producer_time": producer_time,
+            "arrive_time": arrive_time,
+            "type": "data",
+        }
+
+        # Save the data to MongoDB
+        self.mongo_client.create(payload)
+        print(f"Saved to MongoDB: {payload}")
+
     def _start(self):
-        # print("=" * 20, "START", "=" * 20)
         for i in self.partitions:
             self.producer.startTrace(i.partition)
         self.data_handler.reset_state()
@@ -159,11 +172,11 @@ class KafkaDataProcessor:
                 end_time = self.data_handler.last_processed_time[station][channel]
                 time_to_decrease = timedelta(seconds=len(data_to_send) / sampling_rate)
                 start_time = end_time - time_to_decrease
-                if station == "BKB" and channel == "BHE":
-                    print("Flused ", station, channel, start_time, end_time)
                 self.producer.produce(
                     station, channel, data_to_send, start_time, end_time
                 )
+                # Save the flushed data to MongoDB
+                self.__save_data_to_mongo(station, channel, data_to_send, start_time, time_to_decrease, None, None)
         print("=" * 20, "END", "=" * 20)
         for i in self.partitions:
             self.producer.stopTrace(i.partition)
