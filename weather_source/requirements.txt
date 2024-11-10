@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+redis
+confluent-kafka
+celery
+requests
+python-dotenv
