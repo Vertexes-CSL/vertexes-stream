@@ -5,3 +5,4 @@ confluent-kafka
 celery
 requests
 python-dotenv
+kafka-python

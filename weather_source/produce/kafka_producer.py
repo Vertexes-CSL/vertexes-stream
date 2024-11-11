@@ -1,23 +1,14 @@
-from confluent_kafka import Producer
+from kafka import KafkaProducer
 import json
-from os import getenv
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
-TOPIC_NAME = "weather_preprocess"
-BOOTSTRAP_SERVERS = getenv("BOOTSTRAP_SERVERS")
+KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "weather_data")
 
-producer_config = {
-    "bootstrap.servers": BOOTSTRAP_SERVERS,
-}
+producer = KafkaProducer(
+    bootstrap_servers=os.getenv("BOOTSTRAP_SERVERS", "localhost:9092"),
+    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+)
 
-class KafkaProducer:
-    def __init__(self, topic_name=TOPIC_NAME):
-        self.producer = Producer(producer_config)
-        self.topic_name = topic_name
-
-    def produce_message(self, data):
-        self.producer.produce(self.topic_name, value=json.dumps(data).encode('utf-8'))
-        self.producer.flush()
-
-kafka_producer = KafkaProducer()
+def send_to_kafka(data):
+    producer.send(KAFKA_TOPIC, value=data)
+    producer.flush()

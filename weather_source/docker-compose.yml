@@ -10,28 +10,17 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
       - redis
-      - kafka
-      - zookeeper
+      - celery-worker
     ports:
       - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ./output:/app/output
 
   redis:
     image: redis:latest
-
-  kafka:
-    image: confluentinc/cp-kafka
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     ports:
-      - "9092:9092"
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-    ports:
-      - "2181:2181"
+      - "6379:6379"
 
   celery-worker:
     build: .
@@ -40,8 +29,65 @@ services:
       - REDIS_HOST=redis
       - BOOTSTRAP_SERVERS=${BOOTSTRAP_SERVERS}
       - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A produce.manager worker --loglevel=info
+    command: celery -A produce.celery worker --loglevel=info
     depends_on:
       - redis
-      - kafka
-      - zookeeper
+    volumes:
+      - ./output:/app/output
+# -----------
+
+# version: "3.8"
+
+# services:
+#   weather-source:
+#     build: .
+#     environment:
+#       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+#       - REDIS_HOST=redis
+#       - BOOTSTRAP_SERVERS=${BOOTSTRAP_SERVERS}
+#       - CELERY_BROKER_URL=redis://redis:6379/0
+#     depends_on:
+#       - redis
+#       - celery-worker
+#       - kafka
+#       - zookeeper
+#     ports:
+#       - "8000:8000"
+#     command: uvicorn main:app --host 0.0.0.0 --port 8000
+#     volumes:
+#       - ./output:/app/output
+
+#   redis:
+#     image: redis:latest
+#     ports:
+#       - "6379:6379"
+
+#   celery-worker:
+#     build: .
+#     environment:
+#       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+#       - REDIS_HOST=redis
+#       - BOOTSTRAP_SERVERS=${BOOTSTRAP_SERVERS}
+#       - CELERY_BROKER_URL=redis://redis:6379/0
+#     command: celery -A produce.celery worker --loglevel=info
+#     depends_on:
+#       - redis
+#     volumes:
+#       - ./output:/app/output
+
+#   kafka:
+#     image: confluentinc/cp-kafka
+#     environment:
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#     ports:
+#       - "9092:9092"
+#     depends_on:
+#       - zookeeper
+
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper
+#     environment:
+#       ZOOKEEPER_CLIENT_PORT: 2181
+#     ports:
+#       - "2181:2181"
