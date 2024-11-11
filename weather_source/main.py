@@ -36,6 +36,8 @@ import os
 
 load_dotenv()
 
+print(celery_app.tasks.keys())
+
 app = FastAPI()
 
 def start_celery():

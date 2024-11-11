@@ -45,8 +45,8 @@ def fetch_weather_data(lat: str, lon: str):
         print(f"Error fetching data: {response.status_code}")
         return None
 
-def fetch_weather_data_sby():
-    return fetch_weather_data(LAT_SBY, LON_SBY)
-
 def fetch_weather_data_jkt():
     return fetch_weather_data(LAT_JKT, LON_JKT)
+
+def fetch_weather_data_sby():
+    return fetch_weather_data(LAT_SBY, LON_SBY)
