@@ -1,7 +1,5 @@
 services:
   weather-source:
-    build:
-      context: ./
     environment:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - REDIS_HOST=redis
@@ -22,8 +20,6 @@ services:
       - "6379:6379"
 
   celery-worker:
-    build:
-      context: ./
     environment:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - REDIS_HOST=redis
