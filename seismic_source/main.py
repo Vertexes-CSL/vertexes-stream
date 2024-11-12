@@ -38,7 +38,7 @@ def idle(background_tasks: BackgroundTasks):
 
 if __name__ == "__main__":
     config = uvicorn.Config(
-        "main:app", port=int(PORT), log_level="info", host="0.0.0.0"
+        "main:app", port=int(PORT), log_level="info", host="0.0.0.0" # type: ignore
     )
     server = uvicorn.Server(config)
     server.run()
