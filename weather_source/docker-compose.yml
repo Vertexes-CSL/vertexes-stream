@@ -1,7 +1,7 @@
 services:
   weather-source:
     build: 
-      context: ./weather_source
+      context: /weather_source
     environment:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - REDIS_HOST=redis
@@ -23,7 +23,7 @@ services:
 
   celery-worker:
     build: 
-      context: ./weather_source
+      context: /weather_source
     environment:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - REDIS_HOST=redis
