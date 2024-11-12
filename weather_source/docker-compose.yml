@@ -1,6 +1,7 @@
 services:
   weather-source:
-    build: .
+    image: python:3.11
+    working_dir: /app
     environment:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - REDIS_HOST=redis
@@ -11,9 +12,10 @@ services:
       - celery-worker
     ports:
       - "8000:8000"
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
     volumes:
+      - .:/app
       - ./output:/app/output
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000"
 
   redis:
     image: redis:latest
@@ -21,14 +23,16 @@ services:
       - "6379:6379"
 
   celery-worker:
-    build: .
+    image: python:3.11
+    working_dir: /app
     environment:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - REDIS_HOST=redis
       - BOOTSTRAP_SERVERS=${BOOTSTRAP_SERVERS}
       - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A produce.celery worker --loglevel=info
     depends_on:
       - redis
     volumes:
+      - .:/app
       - ./output:/app/output
+    command: sh -c "pip install -r requirements.txt && celery -A produce.celery worker --loglevel=info"
