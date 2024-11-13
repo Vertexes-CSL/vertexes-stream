@@ -15,7 +15,7 @@ services:
     volumes:
       - .:/app
       - ./output:/app/output
-    command: sh -c "pip install -r /requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "pip install -r /app/weather_source/requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000"
 
   redis:
     image: redis:latest
@@ -35,4 +35,4 @@ services:
     volumes:
       - .:/app
       - ./output:/app/output
-    command: sh -c "pip install -r /requirements.txt && celery -A produce.celery worker --loglevel=info"
+    command: sh -c "pip install -r /app/requirements.txt && celery -A produce.celery worker --loglevel=info"
