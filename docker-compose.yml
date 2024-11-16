@@ -45,11 +45,11 @@ services:
       # blocks until kafka is reachable
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --list
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic seismic_preprocess --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
-      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic seismic_store --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
-      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic weather_preprocess --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
-      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic weather_store --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
-      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic pick_data --replication-factor 1 --partitions 3 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic seismic_preprocess --replication-factor 1 --partitions 4 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic seismic_store --replication-factor 1 --partitions 4 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic weather_preprocess --replication-factor 1 --partitions 4 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic weather_store --replication-factor 1 --partitions 4 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
+      kafka-topics --bootstrap-server ver-obspy-kafka:19092 --create --if-not-exists --topic pick_data --replication-factor 1 --partitions 4 --config segment.bytes=150000 --config retention.bytes=3000000 --config retention.ms=120000
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --list
       "

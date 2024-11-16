@@ -61,7 +61,7 @@ class KafkaProducer:
         for i in range(0, self.partitions):
             self.producer.produce(
                 self.topic_name,
-                value=json.loads(self.value_serializer(json.dumps({"type": "start"}))),
+                value=json.loads(self.value_serializer()),
                 partition=i,
                 key="start",
             )
@@ -73,7 +73,7 @@ class KafkaProducer:
             self.producer.produce(
                 # topic=self.topic_name,
                 self.topic_name,
-                value=json.loads(self.value_serializer(json.dumps({"type": "stop"}))),
+                value=json.loads(self.value_serializer()),
                 partition=i,
                 key="stop",
             )

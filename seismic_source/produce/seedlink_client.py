@@ -16,7 +16,7 @@ class SeedlinkClient(StreamClient, EasySeedLinkClient):
         self.__streaming_started = False
         print("Starting new seedlink client")
         for station in self.stations:
-            self.select_stream(net="GE", station=station, selector="BH?")
+            self.select_stream(net="GE", station=station, selector="HN?")
         print("Starting connection to seedlink server ", self.server_hostname)
 
     def run(self):
