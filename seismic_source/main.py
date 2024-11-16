@@ -32,13 +32,13 @@ async def live(background_tasks: BackgroundTasks):
 @app.post("/idle")
 def idle(background_tasks: BackgroundTasks):
     print("Received request to stop live streaming")
-    background_tasks.add_task(streamManager.start, StreamMode.IDLE)
+    background_tasks.add_task(streamManager.stop, StreamMode.IDLE)
     return "ok"
 
 
 if __name__ == "__main__":
     config = uvicorn.Config(
-        "main:app", port=int(PORT), log_level="info", host="0.0.0.0" # type: ignore
+        "main:app", port=int(PORT), log_level="info", host="0.0.0.0"
     )
     server = uvicorn.Server(config)
     server.run()

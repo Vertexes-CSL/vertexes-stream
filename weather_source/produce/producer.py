@@ -1,14 +1,12 @@
 from dotenv import load_dotenv
-from collections.abc import Callable
 from confluent_kafka import Producer
 from typing import Any, Dict
 from typing import Optional
 from os import getenv
 import logging
-import pickle
 import json
-from produce.class_mode import StreamMode
 from produce.redis_client import RedisSingleton
+from collections.abc import Callable
 
 load_dotenv()
 
@@ -44,10 +42,9 @@ class KafkaProducer:
             )
         except Exception as e:
             print(e)
-            self.partitions = 3
+            self.partitions = 5
 
         self.topic_name = topic_name
-        self.current_mode = StreamMode.IDLE
 
         self.value_serializer = value_serializer
         if self.value_serializer is None:
@@ -55,46 +52,49 @@ class KafkaProducer:
 
         logging.debug("Finish creating producer")
 
-    def startTrace(self):
-        stats: str = RedisSingleton().r.get("ENABLED_STATION_CODES")
-        self.stations = set(stats.split(","))
+    def fetch_city_coords_from_redis(self):
+        city_ids = RedisSingleton().r.get("CITY_COORDS")
+        if city_ids:
+            return set(city_ids.split(","))
+        return set()
+
+    def startFetch(self):
+        self.stations = self.fetch_city_coords_from_redis()  # Get city IDs from Redis
         for i in range(0, self.partitions):
             self.producer.produce(
                 self.topic_name,
-                value=json.loads(self.value_serializer()),
+                value=json.loads(self.value_serializer(json.dumps({"type": "start"}))),
                 partition=i,
                 key="start",
             )
         self.producer.flush()
-        print("=" * 20, "Start Trace", "=" * 20)
+        print("=" * 20, "Start Fetch", "=" * 20)
 
-    def stopTrace(self):
+    def stopFetch(self):
         for i in range(0, self.partitions):
             self.producer.produce(
                 self.topic_name,
-                value=json.loads(self.value_serializer()),
+                value=json.loads(self.value_serializer(json.dumps({"type": "stop"}))),
                 partition=i,
                 key="stop",
             )
         self.producer.flush()
-        print("=" * 20, "Stop Trace", "=" * 20)
+        print("=" * 20, "Stop Fetch", "=" * 20)
 
     def produce_message(
         self,
         value,
         key: Optional[Any] = None,
-        mode=StreamMode.IDLE,
-        callback_function: Optional[Callable[[str, str], None]] = None,
     ):
-        if mode == self.current_mode and key in self.stations:
-            serialized_value = self.value_serializer(value) 
-            print(f"Serialized value: {serialized_value}") 
-            self.producer.produce(
-                self.topic_name,
-                value=json.loads(serialized_value),
-                key=key,
-            )
-            self.producer.flush()
+        self.coords = self.fetch_city_coords_from_redis()
+        serialized_value = self.value_serializer(value) 
+        print(f"Serialized value: {serialized_value}") 
+        self.producer.produce(
+            self.topic_name,
+            value=json.loads(serialized_value),
+            key=key,
+        )
+        self.producer.flush()
 
     def log_on_kafka_message_delivery(self, error: Optional[str], message: str):
         if error is not None:
@@ -106,17 +106,6 @@ class KafkaProducer:
             logging.debug(
                 f"Successfully produced message: {message.value()}, topic: {self.topic_name}"
             )
-
-    def get_on_delivery_function(
-        self, extra_function: Optional[Callable[[str, str], None]]
-    ):
-        if extra_function is None:
-            return self.log_on_kafka_message_delivery
-
-        return lambda error, message: (
-            self.log_on_kafka_message_delivery(error, message),
-            extra_function(error, message),
-        )
 
 
 kafkaProducer = KafkaProducer(TOPIC_NAME)

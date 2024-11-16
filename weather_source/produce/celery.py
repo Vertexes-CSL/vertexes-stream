@@ -1,5 +1,5 @@
 from celery import Celery
-from produce.fetch_weather import fetch_weather_data_srg, fetch_weather_data_jkt, fetch_weather_data_bdg, fetch_weather_data_smr, fetch_weather_data_sby
+from weather_source.produce.ow_client import fetch_weather_data_srg, fetch_weather_data_jkt, fetch_weather_data_bdg, fetch_weather_data_smr, fetch_weather_data_sby
 from datetime import datetime
 from pymongo import MongoClient
 import json
@@ -19,26 +19,30 @@ db = client.openweather_db
 collection = db.weather_records
 
 celery_app.conf.beat_schedule = {
-    "fetch-weather-srg-every-5-minutes": {
-        "task": "produce.celery.scheduled_fetch_and_save_srg",
-        "schedule": 300.0,  
+    "fetch-weather-every-5-minutes": {
+        "task": "produce.celery.scheduled_fetch_and_save",
+        "schedule": 5.0,  
     },
-    "fetch-weather-jkt-every-5-minutes": {
-        "task": "produce.celery.scheduled_fetch_and_save_jkt",
-        "schedule": 300.0,  
-    },
-    "fetch-weather-bdg-every-5-minutes": {
-        "task": "produce.celery.scheduled_fetch_and_save_bdg",
-        "schedule": 300.0,  
-    },
-    "fetch-weather-smr-every-5-minutes": {
-        "task": "produce.celery.scheduled_fetch_and_save_smr",
-        "schedule": 300.0,  
-    },
-    "fetch-weather-sby-every-5-seconminutesds": {
-        "task": "produce.celery.scheduled_fetch_and_save_sby",
-        "schedule": 300.0,  
-    },
+    # "fetch-weather-srg-every-5-minutes": {
+    #     "task": "produce.celery.scheduled_fetch_and_save_srg",
+    #     "schedule": 300.0,  
+    # },
+    # "fetch-weather-jkt-every-5-minutes": {
+    #     "task": "produce.celery.scheduled_fetch_and_save_jkt",
+    #     "schedule": 300.0,  
+    # },
+    # "fetch-weather-bdg-every-5-minutes": {
+    #     "task": "produce.celery.scheduled_fetch_and_save_bdg",
+    #     "schedule": 300.0,  
+    # },
+    # "fetch-weather-smr-every-5-minutes": {
+    #     "task": "produce.celery.scheduled_fetch_and_save_smr",
+    #     "schedule": 300.0,  
+    # },
+    # "fetch-weather-sby-every-5-seconminutesds": {
+    #     "task": "produce.celery.scheduled_fetch_and_save_sby",
+    #     "schedule": 300.0,  
+    # },
 }
 
 def save_to_mongodb(data):
@@ -47,6 +51,15 @@ def save_to_mongodb(data):
         print("Data inserted successfully")
     except Exception as e:
         print(f"Error inserting data into MongoDB: {e}")
+
+@celery_app.task()
+def scheduled_fetch_and_save_srg():
+    weather_data = fetch_weather_data_srg()
+    if weather_data:
+        weather_data["timestamp"] = datetime.now().isoformat()
+        save_to_mongodb(weather_data)
+    else:
+        print("Failed to fetch Serang weather data")
 
 @celery_app.task()
 def scheduled_fetch_and_save_srg():

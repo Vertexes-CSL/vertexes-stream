@@ -1,3 +1,4 @@
+apscheduler
 fastapi
 uvicorn
 redis
@@ -5,3 +6,4 @@ celery
 requests
 python-dotenv
 pymongo
+confluent-kafka
