@@ -91,3 +91,7 @@ services:
       - nginx-manager_customnetwork
     ports:
       - "27018:27018"
+
+  volumes:
+   redis_data:
+   mongodb_data:
