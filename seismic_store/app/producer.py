@@ -37,7 +37,7 @@ class KafkaProducer:
             "data": data,
             "len": len(data),
             "producer_time": producer_time,
-            "eews_queue_time": [arrive_time.isoformat(), datetime.utcnow().isoformat()],
+            "store_time": [arrive_time.isoformat(), datetime.utcnow().isoformat()],
             "type": "trace",
         }
 

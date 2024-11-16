@@ -44,7 +44,7 @@ class KafkaProducer:
             )
         except Exception as e:
             print(e)
-            self.partitions = 3
+            self.partitions = 4
 
         self.topic_name = topic_name
         self.current_mode = StreamMode.IDLE
@@ -61,7 +61,7 @@ class KafkaProducer:
         for i in range(0, self.partitions):
             self.producer.produce(
                 self.topic_name,
-                value=json.loads(self.value_serializer()),
+                value=json.loads(self.value_serializer(json.dumps({"type": "start"}))),
                 partition=i,
                 key="start",
             )
@@ -72,7 +72,7 @@ class KafkaProducer:
         for i in range(0, self.partitions):
             self.producer.produce(
                 self.topic_name,
-                value=json.loads(self.value_serializer()),
+                value=json.loads(self.value_serializer(json.dumps({{"type": "stop"}}))),
                 partition=i,
                 key="stop",
             )
