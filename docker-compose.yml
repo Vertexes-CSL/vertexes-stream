@@ -67,7 +67,6 @@ services:
     depends_on:
       - redis
       - kafka
-      - init-kafka
     build:
       context: ./seismic_source
       dockerfile: Dockerfile
