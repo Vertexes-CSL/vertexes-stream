@@ -92,5 +92,6 @@ services:
     ports:
       - "27018:27018"
 
-  volumes:
-   redis_data:
+volumes:
+  redis_data:
+  mongodb_data:
