@@ -3,3 +3,7 @@
 env
 __pycache__
 .db
+.seismic_source.env
+.weather_source.env
+.store.env
+test.py

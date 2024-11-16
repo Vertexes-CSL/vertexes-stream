@@ -32,16 +32,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
       KAFKA_MAX_MESSAGE_BYTES: 700000000
       KAFKA_MESSAGE_MAX_BYTES: 700000000
-    networks:
-      - nginx-manager_customnetwork
-
-  init-kafka:
-    container_name: ver-obspy-init-kafka
-    image: confluentinc/cp-kafka:6.1.1
-    depends_on:
-      - kafka
-      - zookeeper
-    entrypoint: ['/bin/sh', '-c']
     command: |
       "
       # blocks until kafka is reachable
@@ -55,6 +45,8 @@ services:
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --list
       "
+    networks:
+      - nginx-manager_customnetwork    
 
   redis:
     image: redis
@@ -66,20 +58,6 @@ services:
       - '6379:6379'
     volumes:
       - redis_data:/data
-
-  seeder:
-    image: confluentinc/cp-kafka
-    depends_on:
-      - redis
-      - kafka
-      - init-kafka
-    build:
-      context: ./picker
-      dockerfile: Dockerfile
-    container_name: ver-obspy-picker
-    environment:
-      - .seeder.env
-    restart: always
 
   seismic_source:
     image: confluentinc/cp-kafka
@@ -97,31 +75,6 @@ services:
       - '8000:8000'
     restart: always
 
-  queue:
-    image: confluentinc/cp-kafka
-    depends_on:
-      - producer
-      - kafka
-      - init-kafka
-    build:
-      context: ./queue
-      dockerfile: Dockerfile
-    container_name: ver-obspy-queue
-    environment:
-      - .queue.env
-    restart: always
-    mem_limit: 60m
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.1
-    volumes:
-      - ./data/elasticsearch:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
-      - 9300:9300
-    networks:
-      - nginx-manager_customnetwork
-
   mongo:
     image: mongo:latest
     container_name: ver-obspy-mongo
@@ -135,53 +88,3 @@ services:
       - nginx-manager_customnetwork
     ports:
       - "27018:27018"
-
-  # profiler:
-  #   depends_on:
-  #     - elasticsearch
-  #   image: aurum/ddprofiler:0.1
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile-ddprofiler
-  #   volumes:
-  #     - ./data:/data
-  #   command: " --store.server elasticsearch --sources /data/mitdwhdata.yml"
-  #   networks:
-  #     aurum_net:
-  #       aliases:
-  #         - profiler
-
-  # nbc:
-  #   depends_on:
-  #     - elasticsearch
-  #   image: aurum/networkbuildercoordinator:0.1
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile-networkbuildercoordinator
-  #   volumes:
-  #     - ./data/models:/output
-  #   networks:
-  #     aurum_net:
-  #       aliases:
-  #         - nbc
-
-  # notebook:
-  #   depends_on:
-  #     - elasticsearch
-  #   image: aurum/notebook
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile-jupyter-notebook
-  #   volumes:
-  #     - ./data/models:/data/models
-  #   ports:
-  #     - 8888:8888
-  #   networks:
-  #     aurum_net:
-  #       aliases:
-  #         - notebook
-
-volumes:
-  redis_data:
-  elasticsearch_data:
-  mongodb_data:
