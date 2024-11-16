@@ -30,16 +30,6 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
-    networks:
-      - nginx-manager_customnetwork
-
-  init-kafka:
-    container_name: ver-obspy-init-kafka
-    image: confluentinc/cp-kafka:6.1.1
-    depends_on:
-      - kafka
-      - zookeeper
-    entrypoint: ['/bin/sh', '-c']
     command: |
       "
       # blocks until kafka is reachable
@@ -53,6 +43,17 @@ services:
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server ver-obspy-kafka:19092 --list
       "
+    networks:
+      - nginx-manager_customnetwork
+
+  init-kafka:
+    container_name: ver-obspy-init-kafka
+    image: confluentinc/cp-kafka:6.1.1
+    depends_on:
+      - kafka
+      - zookeeper
+    entrypoint: ['/bin/sh', '-c']
+    
 
   redis:
     image: redis
