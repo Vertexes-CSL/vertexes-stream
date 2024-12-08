@@ -12,7 +12,7 @@ celery_app.autodiscover_tasks([])
 
 celery_app.conf.broker_connection_retry_on_startup = True
 
-client = MongoClient(os.getenv("MONGODB"))
+client = MongoClient(os.getenv("MONGO_URI"))
 
 db = client.openweather_db
 
@@ -21,28 +21,29 @@ collection = db.weather_records
 celery_app.conf.beat_schedule = {
     "fetch-weather-srg-every-5-minutes": {
         "task": "produce.celery.scheduled_fetch_and_save_srg",
-        "schedule": 300.0,  
+        "schedule": 5.0,  
     },
     "fetch-weather-jkt-every-5-minutes": {
         "task": "produce.celery.scheduled_fetch_and_save_jkt",
-        "schedule": 300.0,  
+        "schedule": 5.0,  
     },
     "fetch-weather-bdg-every-5-minutes": {
         "task": "produce.celery.scheduled_fetch_and_save_bdg",
-        "schedule": 300.0,  
+        "schedule": 5.0,  
     },
     "fetch-weather-smr-every-5-minutes": {
         "task": "produce.celery.scheduled_fetch_and_save_smr",
-        "schedule": 300.0,  
+        "schedule": 5.0,  
     },
-    "fetch-weather-sby-every-5-seconminutesds": {
+    "fetch-weather-sby-every-5-minutes": {
         "task": "produce.celery.scheduled_fetch_and_save_sby",
-        "schedule": 300.0,  
+        "schedule": 5.0,  
     },
 }
 
 def save_to_mongodb(data):
     try:
+        print("Data before saving to MongoDB:", json.dumps(data, indent=4))
         collection.insert_one(data)
         print("Data inserted successfully")
     except Exception as e:
