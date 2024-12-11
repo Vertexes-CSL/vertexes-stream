@@ -1,24 +1,40 @@
 from fastapi import FastAPI
 from produce.celery import celery_app
 from multiprocessing import Process
+from produce.kafka import Producer
 from dotenv import load_dotenv
+from config.utils import get_env_value
+import threading
 import os
 
 load_dotenv()
 
-print(celery_app.tasks.keys())
+def produce(producer: Producer) -> None:
+    """
+    Run producer instance.
+    """
+    try:
+        producer.create_instance()
+        producer.produce()
+    except KeyboardInterrupt:
+        exit(1)
 
 app = FastAPI()
 
-def start_celery():
-    worker = Process(target=celery_app.worker_main, args=(["worker", "--beat", "--scheduler", "celery.beat.PersistentScheduler"],))
-    worker.start()
 
-@app.on_event("startup")
-def startup_event():
-    start_celery()
+kafka_broker = get_env_value('KAFKA_BROKER')
+kafka_topic = get_env_value('KAFKA_TOPIC')
 
-@app.get("/")
-def read_root():
-    return {"message": "Weather service running"}
+producer = Producer(
+    kafka_topic='weather_raw',
+    kafka_broker='kafka:9092'
+)
+
+t_producer = threading.Thread(
+    target=produce,
+    args=(producer,),
+    daemon=True
+)
+
+t_producer.start()
 
